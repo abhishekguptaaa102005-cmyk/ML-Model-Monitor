@@ -225,6 +225,78 @@ export interface PredictionBin {
   baselineCount: number;
 }
 
+export interface IngestLatency {
+  p50Ms: number;
+  p95Ms: number;
+  p99Ms: number;
+  requestCount: number;
+  errorRate?: number;
+}
+
+export interface IngestPredictionBin {
+  /** Bin key matching baseline, e.g. '0.0-0.1' */
+  bin: string;
+  count: number;
+}
+
+export type IngestFeatureType = typeof IngestFeatureType[keyof typeof IngestFeatureType];
+
+
+export const IngestFeatureType = {
+  continuous: 'continuous',
+  categorical: 'categorical',
+} as const;
+
+export interface IngestFeature {
+  name: string;
+  type: IngestFeatureType;
+  nullRate: number;
+  schemaMismatch?: boolean;
+}
+
+export interface IngestMetricsBody {
+  modelId: number;
+  latency?: IngestLatency;
+  predictionBins?: IngestPredictionBin[];
+  features?: IngestFeature[];
+}
+
+export type IngestFeatureDriftSeverity = typeof IngestFeatureDriftSeverity[keyof typeof IngestFeatureDriftSeverity];
+
+
+export const IngestFeatureDriftSeverity = {
+  stable: 'stable',
+  warning: 'warning',
+  critical: 'critical',
+} as const;
+
+export interface IngestFeatureDrift {
+  name: string;
+  psiScore: number;
+  ksStatistic: number;
+  severity: IngestFeatureDriftSeverity;
+}
+
+export type IngestMetricsResponseDriftSeverity = typeof IngestMetricsResponseDriftSeverity[keyof typeof IngestMetricsResponseDriftSeverity];
+
+
+export const IngestMetricsResponseDriftSeverity = {
+  stable: 'stable',
+  warning: 'warning',
+  critical: 'critical',
+} as const;
+
+export interface IngestMetricsResponse {
+  driftMetricId: number;
+  /** @nullable */
+  latencyMetricId?: number | null;
+  driftSeverity: IngestMetricsResponseDriftSeverity;
+  psiScore: number;
+  ksStatistic: number;
+  alertsCreated: number;
+  featureDrifts: IngestFeatureDrift[];
+}
+
 export type ListDriftMetricsParams = {
 modelId?: number;
 hours?: number;
@@ -259,6 +331,15 @@ export const ListAlertsStatus = {
 
 export type ListFeaturesParams = {
 modelId?: number;
+};
+
+export type SetBaselineBody = {
+  modelId: number;
+  bins: IngestPredictionBin[];
+};
+
+export type SetBaseline200 = {
+  stored: number;
 };
 
 export type GetPredictionDistributionParams = {

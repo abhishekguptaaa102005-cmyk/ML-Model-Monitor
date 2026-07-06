@@ -6,6 +6,7 @@ import latencyRouter from "./latency";
 import alertsRouter from "./alerts";
 import featuresRouter from "./features";
 import summaryRouter from "./summary";
+import ingestRouter from "./ingest";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(latencyRouter);
 router.use(alertsRouter);
 router.use(featuresRouter);
 router.use(summaryRouter);
+router.use(ingestRouter);
 
 export default router;

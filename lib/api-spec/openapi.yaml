@@ -21,6 +21,8 @@ tags:
     description: Feature statistics
   - name: summary
     description: Dashboard summary
+  - name: ingest
+    description: Metrics ingestion from inference containers
 
 paths:
   /healthz:
@@ -281,6 +283,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
+  /ingest/metrics:
+    post:
+      operationId: ingestMetrics
+      tags: [ingest]
+      summary: Push a scrape payload from an inference container — computes drift, updates feature stats, creates alerts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestMetricsBody"
+      responses:
+        "200":
+          description: Ingest result with computed drift and any alerts fired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestMetricsResponse"
+        "400":
+          description: Invalid payload
+        "404":
+          description: Model not found
+
+  /ingest/baseline:
+    post:
+      operationId: setBaseline
+      tags: [ingest]
+      summary: Register baseline prediction distribution bins for a model (call once after training)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modelId, bins]
+              properties:
+                modelId:
+                  type: integer
+                bins:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/IngestPredictionBin"
+      responses:
+        "200":
+          description: Baseline stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [stored]
+                properties:
+                  stored:
+                    type: integer
+
   /summary/prediction-distribution:
     get:
       operationId: getPredictionDistribution
@@ -540,3 +596,95 @@ components:
           type: number
         baselineCount:
           type: number
+
+    IngestLatency:
+      type: object
+      required: [p50Ms, p95Ms, p99Ms, requestCount]
+      properties:
+        p50Ms:
+          type: number
+        p95Ms:
+          type: number
+        p99Ms:
+          type: number
+        requestCount:
+          type: integer
+        errorRate:
+          type: number
+
+    IngestPredictionBin:
+      type: object
+      required: [bin, count]
+      properties:
+        bin:
+          type: string
+          description: "Bin key matching baseline, e.g. '0.0-0.1'"
+        count:
+          type: integer
+
+    IngestFeature:
+      type: object
+      required: [name, type, nullRate]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [continuous, categorical]
+        nullRate:
+          type: number
+        schemaMismatch:
+          type: boolean
+
+    IngestMetricsBody:
+      type: object
+      required: [modelId]
+      properties:
+        modelId:
+          type: integer
+        latency:
+          $ref: "#/components/schemas/IngestLatency"
+        predictionBins:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestPredictionBin"
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestFeature"
+
+    IngestFeatureDrift:
+      type: object
+      required: [name, psiScore, ksStatistic, severity]
+      properties:
+        name:
+          type: string
+        psiScore:
+          type: number
+        ksStatistic:
+          type: number
+        severity:
+          type: string
+          enum: [stable, warning, critical]
+
+    IngestMetricsResponse:
+      type: object
+      required: [driftMetricId, driftSeverity, psiScore, ksStatistic, alertsCreated, featureDrifts]
+      properties:
+        driftMetricId:
+          type: integer
+        latencyMetricId:
+          type: ["integer", "null"]
+        driftSeverity:
+          type: string
+          enum: [stable, warning, critical]
+        psiScore:
+          type: number
+        ksStatistic:
+          type: number
+        alertsCreated:
+          type: integer
+        featureDrifts:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngestFeatureDrift"

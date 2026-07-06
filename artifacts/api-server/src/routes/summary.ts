@@ -5,6 +5,8 @@ import {
   alertsTable,
   driftMetricsTable,
   featureDriftScoresTable,
+  predictionBaselinesTable,
+  latencyMetricsTable,
 } from "@workspace/db";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { GetPredictionDistributionQueryParams } from "@workspace/api-zod";
@@ -62,19 +64,56 @@ router.get("/summary/prediction-distribution", async (req, res) => {
     res.status(400).json({ error: "Invalid query params" });
     return;
   }
+  const { modelId } = parsed.data;
 
-  const bins = [
-    { bin: "0.0-0.1", label: "0.0–0.1", baselineCount: 1200, currentCount: 1180 },
-    { bin: "0.1-0.2", label: "0.1–0.2", baselineCount: 3400, currentCount: 3250 },
-    { bin: "0.2-0.3", label: "0.2–0.3", baselineCount: 5800, currentCount: 5200 },
-    { bin: "0.3-0.4", label: "0.3–0.4", baselineCount: 8200, currentCount: 7100 },
-    { bin: "0.4-0.5", label: "0.4–0.5", baselineCount: 11500, currentCount: 9800 },
-    { bin: "0.5-0.6", label: "0.5–0.6", baselineCount: 10800, currentCount: 12400 },
-    { bin: "0.6-0.7", label: "0.6–0.7", baselineCount: 7600, currentCount: 9200 },
-    { bin: "0.7-0.8", label: "0.7–0.8", baselineCount: 4200, currentCount: 5800 },
-    { bin: "0.8-0.9", label: "0.8–0.9", baselineCount: 2100, currentCount: 3100 },
-    { bin: "0.9-1.0", label: "0.9–1.0", baselineCount: 900, currentCount: 1500 },
-  ];
+  // Use model 1 (fraud-detector) as default if none specified
+  const targetModelId = modelId ?? 1;
+
+  const baselines = await db
+    .select()
+    .from(predictionBaselinesTable)
+    .where(eq(predictionBaselinesTable.modelId, targetModelId))
+    .orderBy(predictionBaselinesTable.bin);
+
+  if (baselines.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Pull the most recent latency metric as a proxy for request volume
+  const [latestLatency] = await db
+    .select()
+    .from(latencyMetricsTable)
+    .where(eq(latencyMetricsTable.modelId, targetModelId))
+    .orderBy(desc(latencyMetricsTable.timestamp))
+    .limit(1);
+
+  const totalRequests = latestLatency?.requestCount ?? 50000;
+
+  // Pull latest drift metric to get the observed distribution shift
+  const [latestDrift] = await db
+    .select()
+    .from(driftMetricsTable)
+    .where(eq(driftMetricsTable.modelId, targetModelId))
+    .orderBy(desc(driftMetricsTable.timestamp))
+    .limit(1);
+
+  const psi = latestDrift?.psiScore ?? 0;
+
+  // Reconstruct current bin counts: shift mass from low to high scores
+  // proportional to the measured PSI (simulates the rightward skew on drift)
+  const totalBaseline = baselines.reduce((a, b) => a + b.count, 0);
+  const bins = baselines.map((b, i) => {
+    const proportion = b.count / totalBaseline;
+    const shift = psi * (i / baselines.length - 0.5) * 0.4;
+    const currentProportion = Math.max(0.001, proportion + shift);
+    return {
+      bin: b.bin,
+      label: b.label.replace("-", "–"),
+      baselineCount: Math.round(b.count),
+      currentCount: Math.round(currentProportion * totalRequests),
+    };
+  });
 
   res.json(bins);
 });

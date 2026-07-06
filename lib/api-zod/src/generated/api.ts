@@ -254,6 +254,62 @@ export const GetDashboardSummaryResponse = zod.object({
 
 
 /**
+ * @summary Push a scrape payload from an inference container — computes drift, updates feature stats, creates alerts
+ */
+export const IngestMetricsBody = zod.object({
+  "modelId": zod.number(),
+  "latency": zod.object({
+  "p50Ms": zod.number(),
+  "p95Ms": zod.number(),
+  "p99Ms": zod.number(),
+  "requestCount": zod.number(),
+  "errorRate": zod.number().optional()
+}).optional(),
+  "predictionBins": zod.array(zod.object({
+  "bin": zod.string().describe('Bin key matching baseline, e.g. \'0.0-0.1\''),
+  "count": zod.number()
+})).optional(),
+  "features": zod.array(zod.object({
+  "name": zod.string(),
+  "type": zod.enum(['continuous', 'categorical']),
+  "nullRate": zod.number(),
+  "schemaMismatch": zod.boolean().optional()
+})).optional()
+})
+
+export const IngestMetricsResponse = zod.object({
+  "driftMetricId": zod.number(),
+  "latencyMetricId": zod.number().nullish(),
+  "driftSeverity": zod.enum(['stable', 'warning', 'critical']),
+  "psiScore": zod.number(),
+  "ksStatistic": zod.number(),
+  "alertsCreated": zod.number(),
+  "featureDrifts": zod.array(zod.object({
+  "name": zod.string(),
+  "psiScore": zod.number(),
+  "ksStatistic": zod.number(),
+  "severity": zod.enum(['stable', 'warning', 'critical'])
+}))
+})
+
+
+/**
+ * @summary Register baseline prediction distribution bins for a model (call once after training)
+ */
+export const SetBaselineBody = zod.object({
+  "modelId": zod.number(),
+  "bins": zod.array(zod.object({
+  "bin": zod.string().describe('Bin key matching baseline, e.g. \'0.0-0.1\''),
+  "count": zod.number()
+}))
+})
+
+export const SetBaselineResponse = zod.object({
+  "stored": zod.number()
+})
+
+
+/**
  * @summary Get prediction distribution bins (current vs baseline)
  */
 export const GetPredictionDistributionQueryParams = zod.object({

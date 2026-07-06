@@ -31,6 +31,8 @@ import type {
   GetFeatureHeatmapParams,
   GetPredictionDistributionParams,
   HealthStatus,
+  IngestMetricsBody,
+  IngestMetricsResponse,
   LatencyMetric,
   ListAlertsParams,
   ListDriftMetricsParams,
@@ -38,7 +40,9 @@ import type {
   ListLatencyMetricsParams,
   ModelVersion,
   ModelVersionInput,
-  PredictionBin
+  PredictionBin,
+  SetBaseline200,
+  SetBaselineBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1096,6 +1100,146 @@ export function useGetDashboardSummary<TData = Awaited<ReturnType<typeof getDash
 
 
 
+
+export const getIngestMetricsUrl = () => {
+
+
+
+
+  return `/api/ingest/metrics`
+}
+
+/**
+ * @summary Push a scrape payload from an inference container — computes drift, updates feature stats, creates alerts
+ */
+export const ingestMetrics = async (ingestMetricsBody: IngestMetricsBody, options?: RequestInit): Promise<IngestMetricsResponse> => {
+
+  return customFetch<IngestMetricsResponse>(getIngestMetricsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(ingestMetricsBody)
+  }
+);}
+
+
+
+
+export const getIngestMetricsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ingestMetrics>>, TError,{data: BodyType<IngestMetricsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ingestMetrics>>, TError,{data: BodyType<IngestMetricsBody>}, TContext> => {
+
+const mutationKey = ['ingestMetrics'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ingestMetrics>>, {data: BodyType<IngestMetricsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  ingestMetrics(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IngestMetricsMutationResult = NonNullable<Awaited<ReturnType<typeof ingestMetrics>>>
+    export type IngestMetricsMutationBody = BodyType<IngestMetricsBody>
+    export type IngestMetricsMutationError = ErrorType<void>
+
+    /**
+ * @summary Push a scrape payload from an inference container — computes drift, updates feature stats, creates alerts
+ */
+export const useIngestMetrics = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ingestMetrics>>, TError,{data: BodyType<IngestMetricsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof ingestMetrics>>,
+        TError,
+        {data: BodyType<IngestMetricsBody>},
+        TContext
+      > => {
+      return useMutation(getIngestMetricsMutationOptions(options));
+    }
+
+export const getSetBaselineUrl = () => {
+
+
+
+
+  return `/api/ingest/baseline`
+}
+
+/**
+ * @summary Register baseline prediction distribution bins for a model (call once after training)
+ */
+export const setBaseline = async (setBaselineBody: SetBaselineBody, options?: RequestInit): Promise<SetBaseline200> => {
+
+  return customFetch<SetBaseline200>(getSetBaselineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(setBaselineBody)
+  }
+);}
+
+
+
+
+export const getSetBaselineMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setBaseline>>, TError,{data: BodyType<SetBaselineBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setBaseline>>, TError,{data: BodyType<SetBaselineBody>}, TContext> => {
+
+const mutationKey = ['setBaseline'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setBaseline>>, {data: BodyType<SetBaselineBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setBaseline(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetBaselineMutationResult = NonNullable<Awaited<ReturnType<typeof setBaseline>>>
+    export type SetBaselineMutationBody = BodyType<SetBaselineBody>
+    export type SetBaselineMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Register baseline prediction distribution bins for a model (call once after training)
+ */
+export const useSetBaseline = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setBaseline>>, TError,{data: BodyType<SetBaselineBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setBaseline>>,
+        TError,
+        {data: BodyType<SetBaselineBody>},
+        TContext
+      > => {
+      return useMutation(getSetBaselineMutationOptions(options));
+    }
 
 export const getGetPredictionDistributionUrl = (params?: GetPredictionDistributionParams,) => {
   const normalizedParams = new URLSearchParams();
