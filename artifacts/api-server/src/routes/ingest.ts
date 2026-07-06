@@ -11,6 +11,7 @@ import {
 } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { IngestMetricsBody, SetBaselineBody } from "@workspace/api-zod";
+import { requireApiKey } from "../middleware/api-key-auth";
 
 const router = Router();
 
@@ -82,7 +83,7 @@ function psiSeverity(psi: number): "stable" | "warning" | "critical" {
 
 // ─── POST /ingest/metrics ─────────────────────────────────────────────────────
 
-router.post("/ingest/metrics", async (req, res) => {
+router.post("/ingest/metrics", requireApiKey, async (req, res) => {
   const parsed = IngestMetricsBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid payload", issues: parsed.error.issues });
@@ -375,7 +376,7 @@ router.post("/ingest/metrics", async (req, res) => {
 
 // ─── POST /ingest/baseline ────────────────────────────────────────────────────
 
-router.post("/ingest/baseline", async (req, res) => {
+router.post("/ingest/baseline", requireApiKey, async (req, res) => {
   const parsed = SetBaselineBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid payload" });
