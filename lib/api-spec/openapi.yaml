@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ML Model Monitoring API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: models
+    description: Model version management
+  - name: drift
+    description: Drift detection metrics
+  - name: latency
+    description: Latency tracking
+  - name: alerts
+    description: Alert management
+  - name: features
+    description: Feature statistics
+  - name: summary
+    description: Dashboard summary
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,273 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /models:
+    get:
+      operationId: listModels
+      tags: [models]
+      summary: List all monitored model versions
+      responses:
+        "200":
+          description: List of model versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModelVersion"
+    post:
+      operationId: createModel
+      tags: [models]
+      summary: Register a new model version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModelVersionInput"
+      responses:
+        "201":
+          description: Model created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelVersion"
+
+  /models/{modelId}:
+    get:
+      operationId: getModel
+      tags: [models]
+      summary: Get a specific model version
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Model version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelVersion"
+        "404":
+          description: Not found
+
+  /drift/metrics:
+    get:
+      operationId: listDriftMetrics
+      tags: [drift]
+      summary: List drift metrics for a model, optionally filtered by time range
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: hours
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+      responses:
+        "200":
+          description: Drift metrics over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DriftMetric"
+
+  /drift/feature-heatmap:
+    get:
+      operationId: getFeatureHeatmap
+      tags: [drift]
+      summary: Get per-feature drift scores (PSI + KS) for heatmap visualization
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feature drift heatmap data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeatureDriftScore"
+
+  /drift/summary:
+    get:
+      operationId: getDriftSummary
+      tags: [drift]
+      summary: Get current drift summary statistics
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Drift summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriftSummary"
+
+  /latency/metrics:
+    get:
+      operationId: listLatencyMetrics
+      tags: [latency]
+      summary: List latency percentile metrics over time
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: hours
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+      responses:
+        "200":
+          description: Latency metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LatencyMetric"
+
+  /latency/current:
+    get:
+      operationId: getCurrentLatency
+      tags: [latency]
+      summary: Get current latency percentiles for all active models
+      responses:
+        "200":
+          description: Current latency stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CurrentLatency"
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List alerts with optional status filter
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, resolved, all]
+            default: all
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /alerts/{alertId}/resolve:
+    patch:
+      operationId: resolveAlert
+      tags: [alerts]
+      summary: Mark an alert as resolved
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alert resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          description: Not found
+
+  /features:
+    get:
+      operationId: listFeatures
+      tags: [features]
+      summary: List feature statistics (null rates, schema mismatches)
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feature statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeatureStat"
+
+  /summary/dashboard:
+    get:
+      operationId: getDashboardSummary
+      tags: [summary]
+      summary: Get overall dashboard summary — model health, active alerts, MTTD, drift status
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /summary/prediction-distribution:
+    get:
+      operationId: getPredictionDistribution
+      tags: [summary]
+      summary: Get prediction distribution bins (current vs baseline)
+      parameters:
+        - name: modelId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Prediction distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PredictionBin"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +309,234 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ModelVersion:
+      type: object
+      required: [id, name, version, status, deployedAt, dailyUsers]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [active, degraded, rolled_back, shadow]
+        deployedAt:
+          type: string
+        dailyUsers:
+          type: integer
+        description:
+          type: ["string", "null"]
+
+    ModelVersionInput:
+      type: object
+      required: [name, version]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        dailyUsers:
+          type: integer
+
+    DriftMetric:
+      type: object
+      required: [id, modelId, modelName, timestamp, psiScore, ksStatistic, chiSquareStat, driftSeverity]
+      properties:
+        id:
+          type: integer
+        modelId:
+          type: integer
+        modelName:
+          type: string
+        timestamp:
+          type: string
+        psiScore:
+          type: number
+        ksStatistic:
+          type: number
+        chiSquareStat:
+          type: number
+        driftSeverity:
+          type: string
+          enum: [stable, warning, critical]
+        featureCount:
+          type: integer
+
+    FeatureDriftScore:
+      type: object
+      required: [featureName, featureType, psiScore, ksStatistic, severity, nullRate, baselineNullRate]
+      properties:
+        featureName:
+          type: string
+        featureType:
+          type: string
+          enum: [continuous, categorical]
+        psiScore:
+          type: number
+        ksStatistic:
+          type: number
+        severity:
+          type: string
+          enum: [stable, warning, critical]
+        nullRate:
+          type: number
+        baselineNullRate:
+          type: number
+
+    DriftSummary:
+      type: object
+      required: [modelId, modelName, overallSeverity, psiScore, ksStatistic, driftedFeatures, totalFeatures, detectedAt]
+      properties:
+        modelId:
+          type: integer
+        modelName:
+          type: string
+        overallSeverity:
+          type: string
+          enum: [stable, warning, critical]
+        psiScore:
+          type: number
+        ksStatistic:
+          type: number
+        driftedFeatures:
+          type: integer
+        totalFeatures:
+          type: integer
+        detectedAt:
+          type: string
+
+    LatencyMetric:
+      type: object
+      required: [id, modelId, modelName, timestamp, p50Ms, p95Ms, p99Ms, requestCount]
+      properties:
+        id:
+          type: integer
+        modelId:
+          type: integer
+        modelName:
+          type: string
+        timestamp:
+          type: string
+        p50Ms:
+          type: number
+        p95Ms:
+          type: number
+        p99Ms:
+          type: number
+        requestCount:
+          type: integer
+        errorRate:
+          type: number
+
+    CurrentLatency:
+      type: object
+      required: [modelId, modelName, p50Ms, p95Ms, p99Ms, status]
+      properties:
+        modelId:
+          type: integer
+        modelName:
+          type: string
+        p50Ms:
+          type: number
+        p95Ms:
+          type: number
+        p99Ms:
+          type: number
+        status:
+          type: string
+          enum: [normal, warning, critical]
+
+    Alert:
+      type: object
+      required: [id, modelId, modelName, severity, type, message, triggeredAt, status]
+      properties:
+        id:
+          type: integer
+        modelId:
+          type: integer
+        modelName:
+          type: string
+        severity:
+          type: string
+          enum: [warning, critical]
+        type:
+          type: string
+          enum: [drift, latency, null_rate, schema_mismatch, prediction_skew]
+        message:
+          type: string
+        triggeredAt:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, resolved]
+        runbookUrl:
+          type: ["string", "null"]
+
+    FeatureStat:
+      type: object
+      required: [id, modelId, featureName, featureType, nullRate, baselineNullRate, schemaMismatch, lastUpdated]
+      properties:
+        id:
+          type: integer
+        modelId:
+          type: integer
+        featureName:
+          type: string
+        featureType:
+          type: string
+          enum: [continuous, categorical]
+        nullRate:
+          type: number
+        baselineNullRate:
+          type: number
+        schemaMismatch:
+          type: boolean
+        lastUpdated:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [totalModels, activeModels, degradedModels, activeAlerts, criticalAlerts, mttdMinutes, totalDailyUsers, overallHealth]
+      properties:
+        totalModels:
+          type: integer
+        activeModels:
+          type: integer
+        degradedModels:
+          type: integer
+        activeAlerts:
+          type: integer
+        criticalAlerts:
+          type: integer
+        mttdMinutes:
+          type: number
+        totalDailyUsers:
+          type: integer
+        overallHealth:
+          type: string
+          enum: [healthy, degraded, critical]
+        recentDriftDetections:
+          type: integer
+        preventedImpacts:
+          type: integer
+
+    PredictionBin:
+      type: object
+      required: [bin, currentCount, baselineCount, label]
+      properties:
+        bin:
+          type: string
+        label:
+          type: string
+        currentCount:
+          type: number
+        baselineCount:
+          type: number
