@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { modelVersionsTable, insertModelVersionSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ListModelsResponseItem, CreateModelBody } from "@workspace/api-zod";
-import { z } from "zod/v4";
 
 const router = Router();
 

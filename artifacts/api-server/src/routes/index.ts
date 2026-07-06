@@ -7,6 +7,9 @@ import alertsRouter from "./alerts";
 import featuresRouter from "./features";
 import summaryRouter from "./summary";
 import ingestRouter from "./ingest";
+import adminRouter from "./admin";
+import chatRouter from "./chat";
+import githubRouter from "./github";
 
 const router: IRouter = Router();
 
@@ -18,5 +21,8 @@ router.use(alertsRouter);
 router.use(featuresRouter);
 router.use(summaryRouter);
 router.use(ingestRouter);
+router.use(adminRouter);
+router.use(chatRouter);
+router.use(githubRouter);
 
 export default router;

@@ -1,144 +1,124 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
-import { SeverityBadge } from "@/components/severity-badge";
+import { GithubImportModal } from "@/components/github-import-modal";
 import { useListModels, useCreateModel, getListModelsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Users, Clock, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const STATUS_COLOR: Record<string, string> = {
+  active: "bg-green-500/10 text-green-400 border-green-500/20",
+  degraded: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  rolled_back: "bg-red-500/10 text-red-400 border-red-500/20",
+  shadow: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+};
 
 export default function ModelsPage() {
-  const { data: models } = useListModels();
+  const { data: models, isLoading } = useListModels();
   const [open, setOpen] = useState(false);
-  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [version, setVersion] = useState("");
+  const [description, setDescription] = useState("");
+  const [dailyUsers, setDailyUsers] = useState("0");
   const queryClient = useQueryClient();
-  
-  const [formData, setFormData] = useState({ name: "", version: "", description: "" });
+  const { toast } = useToast();
 
-  const createModelMutation = useCreateModel({
+  const createModel = useCreateModel({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListModelsQueryKey() });
         setOpen(false);
-        setFormData({ name: "", version: "", description: "" });
-        toast({
-          title: "Model Registered",
-          description: "New model version has been successfully registered.",
-        });
-      }
-    }
+        setName(""); setVersion(""); setDescription(""); setDailyUsers("0");
+        toast({ title: "Model registered" });
+      },
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createModelMutation.mutate({ data: formData });
+  const handleCreate = () => {
+    if (!name || !version) return;
+    createModel.mutate({ data: { name, version, description: description || undefined, dailyUsers: parseInt(dailyUsers) || 0 } });
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Model Versions</h1>
-            <p className="text-muted-foreground font-mono text-sm mt-1">Registry of all deployed model versions.</p>
+            <h1 className="text-xl font-bold tracking-tight">Model Registry</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">All registered model versions.</p>
           </div>
-          
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="font-mono text-xs"><Plus className="w-4 h-4 mr-2" /> Register Model</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] border-border bg-card">
-              <DialogHeader>
-                <DialogTitle className="font-mono">Register New Model Version</DialogTitle>
-                <DialogDescription className="font-mono text-xs">
-                  Add a new model to the monitoring registry.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="font-mono text-xs">Model Name</Label>
-                  <Input 
-                    id="name" 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})} 
-                    className="font-mono bg-background border-border" 
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="version" className="font-mono text-xs">Version</Label>
-                  <Input 
-                    id="version" 
-                    value={formData.version} 
-                    onChange={e => setFormData({...formData, version: e.target.value})} 
-                    className="font-mono bg-background border-border" 
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="desc" className="font-mono text-xs">Description</Label>
-                  <Textarea 
-                    id="desc" 
-                    value={formData.description} 
-                    onChange={e => setFormData({...formData, description: e.target.value})} 
-                    className="font-mono bg-background border-border min-h-[100px]" 
-                  />
-                </div>
-                <DialogFooter className="pt-4">
-                  <Button type="submit" disabled={createModelMutation.isPending} className="font-mono w-full">
-                    {createModelMutation.isPending ? "Registering..." : "Register Model"}
+          <div className="flex gap-2">
+            <GithubImportModal />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-2 h-9"><Plus className="h-4 w-4" /> Register Model</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="text-base">Register Model Version</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Model name</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="fraud-detector" className="h-9 font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Version</Label>
+                    <Input value={version} onChange={e => setVersion(e.target.value)} placeholder="v2.4.1" className="h-9 font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Description</Label>
+                    <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Daily users</Label>
+                    <Input value={dailyUsers} onChange={e => setDailyUsers(e.target.value)} type="number" className="h-9 font-mono text-sm" />
+                  </div>
+                  <Button onClick={handleCreate} disabled={createModel.isPending || !name || !version} className="w-full h-9">
+                    {createModel.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Register
                   </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {models?.map((model) => (
-            <div key={model.id} className="bg-card border border-border rounded-lg p-5 flex flex-col hover:border-primary/50 transition-colors">
-              <div className="flex justify-between items-start mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {isLoading && [1, 2, 3].map(i => (
+            <div key={i} className="h-44 bg-card border border-border rounded-xl animate-pulse" />
+          ))}
+          {models?.map(model => (
+            <div key={model.id} className="bg-card border border-border rounded-xl p-5 space-y-4 hover:border-border/80 transition-colors">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-bold text-lg">{model.name}</h3>
-                  <div className="font-mono text-xs text-muted-foreground mt-1">v{model.version}</div>
+                  <div className="font-semibold text-sm">{model.name}</div>
+                  <div className="text-xs text-muted-foreground font-mono mt-0.5">{model.version}</div>
                 </div>
-                <SeverityBadge severity={model.status} />
+                <span className={`text-[10px] font-medium px-2 py-1 rounded-full border font-mono uppercase tracking-wide ${STATUS_COLOR[model.status] ?? "bg-muted text-muted-foreground border-border"}`}>
+                  {model.status.replace("_", " ")}
+                </span>
               </div>
-              
-              <div className="text-sm text-muted-foreground mb-6 flex-1">
-                {model.description || "No description provided."}
-              </div>
-              
-              <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground mb-1">Daily Users</div>
-                  <div className="font-mono text-sm">{(model.dailyUsers / 1000).toFixed(1)}k</div>
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-mono text-muted-foreground mb-1">Deployed</div>
-                  <div className="font-mono text-sm">{format(new Date(model.deployedAt), 'MMM dd, yyyy')}</div>
-                </div>
+              {model.description && (
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{model.description}</p>
+              )}
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  {model.dailyUsers.toLocaleString()} / day
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  {format(new Date(model.deployedAt), "MMM d, yyyy")}
+                </span>
               </div>
             </div>
           ))}
-          {(!models || models.length === 0) && (
-            <div className="col-span-full p-12 text-center text-muted-foreground font-mono border border-dashed border-border rounded">
-              No models registered in the system.
-            </div>
-          )}
         </div>
       </div>
     </Layout>
