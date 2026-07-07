@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { GithubImportModal } from "@/components/github-import-modal";
+import { ModelDetailSheet } from "@/components/model-detail-sheet";
 import { useListModels, useCreateModel, getListModelsQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Users, Clock, Loader2 } from "lucide-react";
+import { Plus, Users, Clock, Loader2, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -21,6 +22,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default function ModelsPage() {
   const { data: models, isLoading } = useListModels();
   const [open, setOpen] = useState(false);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [version, setVersion] = useState("");
   const [description, setDescription] = useState("");
@@ -34,7 +36,7 @@ export default function ModelsPage() {
         queryClient.invalidateQueries({ queryKey: getListModelsQueryKey() });
         setOpen(false);
         setName(""); setVersion(""); setDescription(""); setDailyUsers("0");
-        toast({ title: "Model registered" });
+        toast({ title: "Model registered", description: "Default features have been auto-imported for health monitoring." });
       },
     },
   });
@@ -50,7 +52,7 @@ export default function ModelsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Model Registry</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">All registered model versions.</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Click any model for full health report.</p>
           </div>
           <div className="flex gap-2">
             <GithubImportModal />
@@ -94,15 +96,22 @@ export default function ModelsPage() {
             <div key={i} className="h-44 bg-card border border-border rounded-xl animate-pulse" />
           ))}
           {models?.map(model => (
-            <div key={model.id} className="bg-card border border-border rounded-xl p-5 space-y-4 hover:border-border/80 transition-colors">
+            <button
+              key={model.id}
+              onClick={() => setSelectedModelId(model.id)}
+              className="bg-card border border-border rounded-xl p-5 space-y-4 hover:border-primary/40 hover:bg-muted/10 transition-all text-left group w-full"
+            >
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-semibold text-sm">{model.name}</div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{model.name}</div>
                   <div className="text-xs text-muted-foreground font-mono mt-0.5">{model.version}</div>
                 </div>
-                <span className={`text-[10px] font-medium px-2 py-1 rounded-full border font-mono uppercase tracking-wide ${STATUS_COLOR[model.status] ?? "bg-muted text-muted-foreground border-border"}`}>
-                  {model.status.replace("_", " ")}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[10px] font-medium px-2 py-1 rounded-full border font-mono uppercase tracking-wide ${STATUS_COLOR[model.status] ?? "bg-muted text-muted-foreground border-border"}`}>
+                    {model.status.replace("_", " ")}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
               {model.description && (
                 <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{model.description}</p>
@@ -117,10 +126,15 @@ export default function ModelsPage() {
                   {format(new Date(model.deployedAt), "MMM d, yyyy")}
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      <ModelDetailSheet
+        modelId={selectedModelId}
+        onClose={() => setSelectedModelId(null)}
+      />
     </Layout>
   );
 }

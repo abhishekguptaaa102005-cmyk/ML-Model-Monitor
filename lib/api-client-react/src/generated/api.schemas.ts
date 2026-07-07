@@ -277,6 +277,91 @@ export interface IngestFeatureDrift {
   severity: IngestFeatureDriftSeverity;
 }
 
+export type ModelReportOverallHealth = typeof ModelReportOverallHealth[keyof typeof ModelReportOverallHealth];
+
+
+export const ModelReportOverallHealth = {
+  healthy: 'healthy',
+  degraded: 'degraded',
+  critical: 'critical',
+} as const;
+
+export type ModelReportDriftOverallSeverity = typeof ModelReportDriftOverallSeverity[keyof typeof ModelReportDriftOverallSeverity];
+
+
+export const ModelReportDriftOverallSeverity = {
+  stable: 'stable',
+  warning: 'warning',
+  critical: 'critical',
+} as const;
+
+export type ModelReportDriftTopDriftedFeaturesItem = {
+  featureName: string;
+  psiScore: number;
+  ksStatistic?: number;
+  severity: string;
+};
+
+export type ModelReportDrift = {
+  overallSeverity: ModelReportDriftOverallSeverity;
+  psiScore: number;
+  ksStatistic: number;
+  driftedFeatures: number;
+  totalFeatures: number;
+  topDriftedFeatures?: ModelReportDriftTopDriftedFeaturesItem[];
+};
+
+export type ModelReportLatencyStatus = typeof ModelReportLatencyStatus[keyof typeof ModelReportLatencyStatus];
+
+
+export const ModelReportLatencyStatus = {
+  normal: 'normal',
+  warning: 'warning',
+  critical: 'critical',
+  no_data: 'no_data',
+} as const;
+
+export type ModelReportLatency = {
+  p50Ms: number;
+  p95Ms: number;
+  p99Ms: number;
+  status: ModelReportLatencyStatus;
+  slaBreached: boolean;
+};
+
+export type ModelReportAlerts = {
+  activeCount: number;
+  criticalCount: number;
+  recent: Alert[];
+};
+
+export type ModelReportSuggestionsItemPriority = typeof ModelReportSuggestionsItemPriority[keyof typeof ModelReportSuggestionsItemPriority];
+
+
+export const ModelReportSuggestionsItemPriority = {
+  critical: 'critical',
+  warning: 'warning',
+  info: 'info',
+} as const;
+
+export type ModelReportSuggestionsItem = {
+  priority: ModelReportSuggestionsItemPriority;
+  category: string;
+  text: string;
+};
+
+export interface ModelReport {
+  model: ModelVersion;
+  /** 0-100 composite health score */
+  healthScore: number;
+  overallHealth: ModelReportOverallHealth;
+  drift: ModelReportDrift;
+  latency: ModelReportLatency;
+  features: FeatureStat[];
+  alerts: ModelReportAlerts;
+  suggestions: ModelReportSuggestionsItem[];
+}
+
 export type IngestMetricsResponseDriftSeverity = typeof IngestMetricsResponseDriftSeverity[keyof typeof IngestMetricsResponseDriftSeverity];
 
 

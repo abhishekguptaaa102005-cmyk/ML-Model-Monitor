@@ -38,6 +38,7 @@ import type {
   ListDriftMetricsParams,
   ListFeaturesParams,
   ListLatencyMetricsParams,
+  ModelReport,
   ModelVersion,
   ModelVersionInput,
   PredictionBin,
@@ -361,6 +362,83 @@ export function useGetModel<TData = Awaited<ReturnType<typeof getModel>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetModelQueryOptions(modelId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetModelReportUrl = (modelId: number,) => {
+
+
+
+
+  return `/api/models/${modelId}/report`
+}
+
+/**
+ * @summary Full health report for a model — drift, latency, features, alerts, suggestions
+ */
+export const getModelReport = async (modelId: number, options?: RequestInit): Promise<ModelReport> => {
+
+  return customFetch<ModelReport>(getGetModelReportUrl(modelId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetModelReportQueryKey = (modelId: number,) => {
+    return [
+    `/api/models/${modelId}/report`
+    ] as const;
+    }
+
+
+export const getGetModelReportQueryOptions = <TData = Awaited<ReturnType<typeof getModelReport>>, TError = ErrorType<void>>(modelId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetModelReportQueryKey(modelId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getModelReport>>> = ({ signal }) => getModelReport(modelId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: modelId !== null && modelId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getModelReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetModelReportQueryResult = NonNullable<Awaited<ReturnType<typeof getModelReport>>>
+export type GetModelReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Full health report for a model — drift, latency, features, alerts, suggestions
+ */
+
+export function useGetModelReport<TData = Awaited<ReturnType<typeof getModelReport>>, TError = ErrorType<void>>(
+ modelId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetModelReportQueryOptions(modelId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

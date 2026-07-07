@@ -91,6 +91,27 @@ paths:
         "404":
           description: Not found
 
+  /models/{modelId}/report:
+    get:
+      operationId: getModelReport
+      tags: [models]
+      summary: Full health report for a model — drift, latency, features, alerts, suggestions
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Model health report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelReport"
+        "404":
+          description: Not found
+
   /drift/metrics:
     get:
       operationId: listDriftMetrics
@@ -666,6 +687,92 @@ components:
         severity:
           type: string
           enum: [stable, warning, critical]
+
+    ModelReport:
+      type: object
+      required: [model, healthScore, overallHealth, drift, latency, features, alerts, suggestions]
+      properties:
+        model:
+          $ref: "#/components/schemas/ModelVersion"
+        healthScore:
+          type: integer
+          description: 0-100 composite health score
+        overallHealth:
+          type: string
+          enum: [healthy, degraded, critical]
+        drift:
+          type: object
+          required: [overallSeverity, psiScore, ksStatistic, driftedFeatures, totalFeatures]
+          properties:
+            overallSeverity:
+              type: string
+              enum: [stable, warning, critical]
+            psiScore:
+              type: number
+            ksStatistic:
+              type: number
+            driftedFeatures:
+              type: integer
+            totalFeatures:
+              type: integer
+            topDriftedFeatures:
+              type: array
+              items:
+                type: object
+                required: [featureName, psiScore, severity]
+                properties:
+                  featureName:
+                    type: string
+                  psiScore:
+                    type: number
+                  ksStatistic:
+                    type: number
+                  severity:
+                    type: string
+        latency:
+          type: object
+          required: [p50Ms, p95Ms, p99Ms, status, slaBreached]
+          properties:
+            p50Ms:
+              type: number
+            p95Ms:
+              type: number
+            p99Ms:
+              type: number
+            status:
+              type: string
+              enum: [normal, warning, critical, no_data]
+            slaBreached:
+              type: boolean
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureStat"
+        alerts:
+          type: object
+          required: [activeCount, criticalCount, recent]
+          properties:
+            activeCount:
+              type: integer
+            criticalCount:
+              type: integer
+            recent:
+              type: array
+              items:
+                $ref: "#/components/schemas/Alert"
+        suggestions:
+          type: array
+          items:
+            type: object
+            required: [priority, category, text]
+            properties:
+              priority:
+                type: string
+                enum: [critical, warning, info]
+              category:
+                type: string
+              text:
+                type: string
 
     IngestMetricsResponse:
       type: object

@@ -71,6 +71,79 @@ export const GetModelResponse = zod.object({
 
 
 /**
+ * @summary Full health report for a model — drift, latency, features, alerts, suggestions
+ */
+export const GetModelReportParams = zod.object({
+  "modelId": zod.coerce.number()
+})
+
+export const GetModelReportResponse = zod.object({
+  "model": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "version": zod.string(),
+  "status": zod.enum(['active', 'degraded', 'rolled_back', 'shadow']),
+  "deployedAt": zod.string(),
+  "dailyUsers": zod.number(),
+  "description": zod.string().nullish()
+}),
+  "healthScore": zod.number().describe('0-100 composite health score'),
+  "overallHealth": zod.enum(['healthy', 'degraded', 'critical']),
+  "drift": zod.object({
+  "overallSeverity": zod.enum(['stable', 'warning', 'critical']),
+  "psiScore": zod.number(),
+  "ksStatistic": zod.number(),
+  "driftedFeatures": zod.number(),
+  "totalFeatures": zod.number(),
+  "topDriftedFeatures": zod.array(zod.object({
+  "featureName": zod.string(),
+  "psiScore": zod.number(),
+  "ksStatistic": zod.number().optional(),
+  "severity": zod.string()
+})).optional()
+}),
+  "latency": zod.object({
+  "p50Ms": zod.number(),
+  "p95Ms": zod.number(),
+  "p99Ms": zod.number(),
+  "status": zod.enum(['normal', 'warning', 'critical', 'no_data']),
+  "slaBreached": zod.boolean()
+}),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "modelId": zod.number(),
+  "featureName": zod.string(),
+  "featureType": zod.enum(['continuous', 'categorical']),
+  "nullRate": zod.number(),
+  "baselineNullRate": zod.number(),
+  "schemaMismatch": zod.boolean(),
+  "lastUpdated": zod.string()
+})),
+  "alerts": zod.object({
+  "activeCount": zod.number(),
+  "criticalCount": zod.number(),
+  "recent": zod.array(zod.object({
+  "id": zod.number(),
+  "modelId": zod.number(),
+  "modelName": zod.string(),
+  "severity": zod.enum(['warning', 'critical']),
+  "type": zod.enum(['drift', 'latency', 'null_rate', 'schema_mismatch', 'prediction_skew']),
+  "message": zod.string(),
+  "triggeredAt": zod.string(),
+  "resolvedAt": zod.string().nullish(),
+  "status": zod.enum(['active', 'resolved']),
+  "runbookUrl": zod.string().nullish()
+}))
+}),
+  "suggestions": zod.array(zod.object({
+  "priority": zod.enum(['critical', 'warning', 'info']),
+  "category": zod.string(),
+  "text": zod.string()
+}))
+})
+
+
+/**
  * @summary List drift metrics for a model, optionally filtered by time range
  */
 export const listDriftMetricsQueryHoursDefault = 24;

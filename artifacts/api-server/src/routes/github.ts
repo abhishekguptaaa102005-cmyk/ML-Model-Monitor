@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { modelVersionsTable } from "@workspace/db";
+import { seedDefaultFeatures } from "./models";
 
 const router = Router();
 
@@ -40,7 +41,6 @@ router.post("/github/import-model", async (req, res) => {
     return;
   }
 
-  // Fetch repo metadata from GitHub public API
   let repoInfo: GithubRepoInfo;
   try {
     const response = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}`, {
@@ -56,11 +56,9 @@ router.post("/github/import-model", async (req, res) => {
     return;
   }
 
-  // Derive a health signal from repo metadata
   const daysSinceUpdate = Math.floor((Date.now() - new Date(repoInfo.updated_at).getTime()) / 86400000);
   const health = daysSinceUpdate > 180 ? "warning" : "good";
 
-  // Register the model
   const [model] = await db.insert(modelVersionsTable).values({
     name: repoInfo.name,
     version: version ?? "v1.0.0",
@@ -68,6 +66,8 @@ router.post("/github/import-model", async (req, res) => {
     dailyUsers: dailyUsers ?? 0,
     status: "active",
   }).returning();
+
+  await seedDefaultFeatures(model.id, model.name);
 
   res.json({
     model: {
