@@ -76,7 +76,7 @@ function StatCard({ label, value, sub, icon: Icon, highlight }: {
 
 export function ModelDetailSheet({ modelId, onClose }: Props) {
   const { data: report, isLoading } = useGetModelReport(
-    { modelId: modelId! },
+    modelId!,
     { query: { enabled: modelId !== null } }
   );
 
