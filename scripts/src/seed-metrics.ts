@@ -1,10 +1,9 @@
-import { db } from "@workspace/db";
+import { db, eq } from "@workspace/db";
 import {
   driftMetricsTable,
   latencyMetricsTable,
   modelVersionsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;

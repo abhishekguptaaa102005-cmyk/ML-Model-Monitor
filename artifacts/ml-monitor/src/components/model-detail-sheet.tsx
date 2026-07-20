@@ -75,10 +75,7 @@ function StatCard({ label, value, sub, icon: Icon, highlight }: {
 }
 
 export function ModelDetailSheet({ modelId, onClose }: Props) {
-  const { data: report, isLoading } = useGetModelReport(
-    modelId!,
-    { query: { enabled: modelId !== null } }
-  );
+  const { data: report, isLoading } = useGetModelReport(modelId!);
 
   return (
     <Sheet open={modelId !== null} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -184,7 +181,7 @@ export function ModelDetailSheet({ modelId, onClose }: Props) {
             )}
 
             {/* Top drifted features */}
-            {report.drift.topDriftedFeatures.length > 0 && (
+            {report.drift.topDriftedFeatures && report.drift.topDriftedFeatures.length > 0 && (
               <div className="px-6 py-4 border-b border-border">
                 <div className="flex items-center gap-2 mb-3">
                   <BarChart2 className="h-3.5 w-3.5 text-muted-foreground" />
