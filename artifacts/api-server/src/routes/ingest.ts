@@ -15,23 +15,8 @@ import { requireApiKey } from "../middleware/api-key-auth";
 
 const router = Router();
 
-// ─── Statistical helpers ──────────────────────────────────────────────────────
-
-/**
- * Population Stability Index
- * PSI = Σ (P_current - P_baseline) × ln(P_current / P_baseline)
- *
- * Interpretation:
- *   PSI < 0.10  → stable      (no significant change)
- *   PSI < 0.25  → warning     (moderate shift, investigate)
- *   PSI ≥ 0.25  → critical    (major shift, act immediately)
- *
- * Small epsilon prevents ln(0) when a bin is empty.
- */
-function computePSI(
-  currentCounts: number[],
-  baselineCounts: number[],
-): number {
+// PSI = Σ(p_cur - p_base)·ln(p_cur/p_base); <0.10 stable, <0.25 warning, ≥0.25 critical
+function computePSI(currentCounts: number[], baselineCounts: number[]): number {
   const eps = 1e-6;
   const totalCurrent = currentCounts.reduce((a, b) => a + b, 0) || 1;
   const totalBaseline = baselineCounts.reduce((a, b) => a + b, 0) || 1;
@@ -45,20 +30,8 @@ function computePSI(
   return Math.round(psi * 10000) / 10000;
 }
 
-/**
- * Kolmogorov-Smirnov statistic (two-sample, discrete)
- * KS = max |CDF_current(x) - CDF_baseline(x)| across all bin boundaries
- *
- * Measures the maximum divergence between two cumulative distribution
- * functions. For binned predictions: walk the bins in order, accumulate
- * proportions, track the largest gap.
- *
- * Range: [0, 1] — 0 = identical distributions, 1 = no overlap.
- */
-function computeKS(
-  currentCounts: number[],
-  baselineCounts: number[],
-): number {
+// KS = max|CDF_cur(x) - CDF_base(x)| — max divergence between cumulative distributions
+function computeKS(currentCounts: number[], baselineCounts: number[]): number {
   const totalCurrent = currentCounts.reduce((a, b) => a + b, 0) || 1;
   const totalBaseline = baselineCounts.reduce((a, b) => a + b, 0) || 1;
 
@@ -74,7 +47,6 @@ function computeKS(
   return Math.round(maxDiff * 10000) / 10000;
 }
 
-/** PSI thresholds → severity label */
 function psiSeverity(psi: number): "stable" | "warning" | "critical" {
   if (psi >= 0.25) return "critical";
   if (psi >= 0.10) return "warning";

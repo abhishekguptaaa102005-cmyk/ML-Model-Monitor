@@ -105,19 +105,19 @@ function buildSuggestions(
     suggestions.push({
       priority: "critical",
       category: "Data Drift",
-      text: `PSI score ${psi.toFixed(3)} exceeds critical threshold (0.25). Retrain the model on recent data immediately to prevent prediction degradation.`,
+      text: `PSI ${psi.toFixed(3)} is above the critical threshold (0.25). Retrain on recent data as soon as possible.`,
     });
   } else if (psi >= 0.1) {
     suggestions.push({
       priority: "warning",
       category: "Data Drift",
-      text: `PSI score ${psi.toFixed(3)} is in the warning zone (0.10–0.25). Investigate feature distributions and schedule a retrain if drift persists 24–48h.`,
+      text: `PSI ${psi.toFixed(3)} is in the warning zone (0.10–0.25). Check feature distributions and plan a retrain if drift persists for 24–48h.`,
     });
   } else {
     suggestions.push({
       priority: "info",
       category: "Data Drift",
-      text: "PSI score is within stable range (<0.10). No retraining action required at this time.",
+      text: "PSI is stable (<0.10). No action needed right now.",
     });
   }
 
@@ -125,13 +125,13 @@ function buildSuggestions(
     suggestions.push({
       priority: "critical",
       category: "Latency",
-      text: `P99 latency (${p99.toFixed(0)}ms) breaches the 500ms SLA. Check resource contention, batch sizes, and consider horizontal scaling.`,
+      text: `P99 latency (${p99.toFixed(0)}ms) is over the 500ms SLA. Check CPU/memory, review batch sizes, or scale horizontally.`,
     });
   } else if (p99 > 350) {
     suggestions.push({
       priority: "warning",
       category: "Latency",
-      text: `P99 latency (${p99.toFixed(0)}ms) is approaching the SLA limit. Monitor closely and review inference server capacity.`,
+      text: `P99 latency (${p99.toFixed(0)}ms) is creeping up toward the SLA limit. Keep an eye on server capacity.`,
     });
   }
 
@@ -139,7 +139,7 @@ function buildSuggestions(
     suggestions.push({
       priority: "critical",
       category: "Active Alerts",
-      text: `${criticalAlerts} critical alert${criticalAlerts > 1 ? "s" : ""} require immediate attention. Resolve these before the monitoring window passes.`,
+      text: `${criticalAlerts} critical alert${criticalAlerts > 1 ? "s" : ""} need attention. Triage before the monitoring window closes.`,
     });
   }
 
@@ -147,7 +147,7 @@ function buildSuggestions(
     suggestions.push({
       priority: "warning",
       category: "Feature Health",
-      text: `${unhealthyFeatures} feature${unhealthyFeatures > 1 ? "s have" : " has"} elevated null rates vs baseline. Trace upstream data pipelines for schema or ETL changes.`,
+      text: `${unhealthyFeatures} feature${unhealthyFeatures > 1 ? "s have" : " has"} unusually high null rates. Check upstream data pipelines for recent changes.`,
     });
   }
 
@@ -155,14 +155,14 @@ function buildSuggestions(
     suggestions.push({
       priority: "warning",
       category: "Model Status",
-      text: "Model is in degraded state. Review recent deployments and consider rollback if performance hasn't improved within your SLO window.",
+      text: "Model is degraded. Review recent deploys — roll back if performance hasn't recovered within your SLO window.",
     });
   }
 
   suggestions.push({
     priority: "info",
     category: "Monitoring Hygiene",
-    text: "Per NVIDIA monitoring guidance: set up automated retraining triggers at PSI > 0.20 and schedule monthly baseline refreshes to prevent silent degradation.",
+    text: "Consider setting up automated retraining triggers at PSI > 0.20 and refreshing baselines monthly to catch drift early.",
   });
 
   return suggestions;

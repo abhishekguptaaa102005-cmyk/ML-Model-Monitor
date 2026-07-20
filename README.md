@@ -1,6 +1,6 @@
 # ML Model Monitor
 
-A comprehensive **ML Model Monitoring Platform** that tracks drift, latency, feature health, and alerts for machine learning models in production. Built with TypeScript, Express, React, and PostgreSQL.
+A **ML Model Monitoring Platform** that tracks drift, latency, feature health, and alerts for machine learning models in production. Built with TypeScript, Express, React, and PostgreSQL.
 
 ## Architecture
 

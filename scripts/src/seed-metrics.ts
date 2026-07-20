@@ -27,8 +27,8 @@ async function seedDriftMetrics() {
   const now = Date.now();
   const hoursBack = 24;
 
-  // fraud-detector (id=1): starts stable, drifts toward warning/critical mid-day
-  // churn-predictor (id=2): stays at warning throughout
+  // fraud-detector starts stable, drifts toward warning/critical through the day
+  // churn-predictor hovers around warning throughout
   const modelProfiles: Array<{
     modelId: number;
     psiStart: number;

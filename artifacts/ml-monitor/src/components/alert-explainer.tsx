@@ -12,33 +12,33 @@ interface Props {
 const TYPE_META: Record<AlertType, { icon: React.ComponentType<{ className?: string }>; what: string; why: string; fix: string }> = {
   drift: {
     icon: TrendingUp,
-    what: "The statistical patterns in your input data have shifted away from what the model was trained on.",
-    why: "When data drifts, predictions become unreliable — the model answers questions using knowledge that no longer matches reality.",
-    fix: "Check your data pipeline for upstream changes. Compare recent feature distributions against training data. Consider retraining if drift persists.",
+    what: "The input data has shifted from what the model was trained on — patterns in the real world changed.",
+    why: "Models are only as good as their training data. If the data feeding in no longer matches, predictions start to miss the mark.",
+    fix: "Compare recent feature distributions against training data. If drift persists, retrain on fresh data.",
   },
   latency: {
     icon: Zap,
-    what: "Prediction requests are taking too long to complete — longer than the 500ms target.",
-    why: "Slow predictions mean users wait longer, or requests time out entirely. At scale this can cascade into outages.",
-    fix: "Check model server resource usage (CPU/memory). Look for cold-start issues or resource contention. Review batch size or concurrency settings.",
+    what: "Prediction requests are taking too long — over the 500ms target.",
+    why: "Users feel the lag, requests may time out, and slow responses can cascade into bigger issues at scale.",
+    fix: "Check server CPU and memory. Look for cold-start issues or resource contention. Adjust batch sizes or scale out.",
   },
   null_rate: {
     icon: Database,
-    what: "A feature is arriving with significantly more missing values than usual.",
-    why: "Models handle missing values poorly. High null rates usually indicate an upstream data pipeline problem.",
-    fix: "Trace the feature back to its source system. Check if a recent pipeline deploy changed how nulls are handled or if a data source is down.",
+    what: "A feature has way more missing values than usual.",
+    why: "Models don't handle nulls well. This usually points to an upstream data pipeline problem.",
+    fix: "Trace the feature back to its source. Check if a recent deploy changed how nulls are handled, or if a source is down.",
   },
   schema_mismatch: {
     icon: AlertCircle,
-    what: "A feature is arriving in an unexpected format or type — different from what the model expects.",
-    why: "Schema mismatches cause silent errors or wrong predictions. The model may silently default to zero or throw an exception.",
-    fix: "Find which upstream system changed the feature schema. Roll back or update the preprocessing pipeline to handle the new format.",
+    what: "A feature arrived in an unexpected format — different from what the model expects.",
+    why: "Schema mismatches can silently produce wrong predictions or cause the model to throw errors.",
+    fix: "Find which upstream system changed the schema. Roll back the change or update your preprocessing pipeline.",
   },
   prediction_skew: {
     icon: BarChart2,
-    what: "The distribution of model outputs has shifted — predictions are skewing toward different values than expected.",
-    why: "Skewed predictions mean users may be getting systematically wrong answers. This is often the final symptom of upstream data drift.",
-    fix: "Check drift metrics for which features are causing the shift. If PSI is above 0.25, consider rolling back to the previous model version while investigating.",
+    what: "Model outputs are shifting toward different values than expected.",
+    why: "Users may get systematically wrong answers. This is often a downstream symptom of upstream data drift.",
+    fix: "Check which features are driving the shift. If PSI is above 0.25, roll back to the previous model version while investigating.",
   },
 };
 
