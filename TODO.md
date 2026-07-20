@@ -5,5 +5,5 @@
 - [x] Re-run `pnpm install` confirmed — dependencies install cleanly
 - [x] Typecheck passes across all workspaces
 - [x] Create professional README with architecture, setup, and API docs
-- [ ] Push to GitHub remote
+- [x] Push to GitHub remote: https://github.com/abhishekguptaaa102005-cmyk/ML-Model-Monitor.git
 
